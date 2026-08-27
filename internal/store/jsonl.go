@@ -24,6 +24,7 @@ type persistedEvent struct {
 	Version     int
 	Data        any
 	At          time.Time
+	Idempotency string
 }
 
 func (s *Store) Dir() string { return filepath.Dir(s.path) }
@@ -43,7 +44,7 @@ func Open(dir string) (*Store, error) {
 		line := sc.Bytes()
 		var v persistedEvent
 		if json.Unmarshal(line, &v) == nil {
-			s.events = append(s.events, domain.Event{ID: v.ID, Type: v.Type, AggregateID: v.AggregateID, Version: v.Version, Data: v.Data, At: v.At})
+			s.events = append(s.events, domain.Event{ID: v.ID, Type: v.Type, AggregateID: v.AggregateID, Version: v.Version, Data: v.Data, At: v.At, Idempotency: v.Idempotency})
 		} else if _, x := f.Seek(0, io.SeekCurrent); x == nil {
 			break
 		}
@@ -61,7 +62,7 @@ func (s *Store) Append(e domain.Event) error {
 		return err
 	}
 	defer f.Close()
-	b, err := json.Marshal(persistedEvent{ID: e.ID, Type: e.Type, AggregateID: e.AggregateID, Version: e.Version, Data: e.Data, At: e.At})
+	b, err := json.Marshal(persistedEvent{ID: e.ID, Type: e.Type, AggregateID: e.AggregateID, Version: e.Version, Data: e.Data, At: e.At, Idempotency: e.Idempotency})
 	if err != nil {
 		return err
 	}
