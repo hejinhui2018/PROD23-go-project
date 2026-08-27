@@ -35,6 +35,12 @@ func (s *Service) replay() {
 			if json.Unmarshal(b, &failure) == nil && failure.Step.ID != "" {
 				st := failure.Step
 				s.Steps[st.ID] = &st
+				if failure.Review.ID != "" {
+					s.Reviews = append(s.Reviews, failure.Review)
+				} else if failure.ReviewID != "" {
+					rv := domain.ReviewRecord{ID: failure.ReviewID, StepID: st.ID, Reason: st.Result, Worker: st.ClaimedBy, CreatedAt: e.At}
+					s.Reviews = append(s.Reviews, rv)
+				}
 				continue
 			}
 			var st domain.Step
